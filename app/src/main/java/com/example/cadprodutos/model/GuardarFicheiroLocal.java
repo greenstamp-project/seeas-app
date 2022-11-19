@@ -124,7 +124,9 @@ public class GuardarFicheiroLocal extends AppCompatActivity {
         String nomeFicheiro = nomeficheiro + ".txt";
 
         //Criar arquivo
-        File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(),nomeFicheiro);
+        System.out.println("INFOR:" + Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath());
+        //File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(),nomeFicheiro);
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), nomeFicheiro);
 
         //Escrever no arquivo
         try {
@@ -188,7 +190,7 @@ public class GuardarFicheiroLocal extends AppCompatActivity {
     //Section: Read Text ======================================================
     private String readText(String input){
        // File file = new File(Environment.getExternalStorageDirectory(), input);
-            File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath(),input);
+            File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),input);
         StringBuilder text = new StringBuilder();
         try{
             BufferedReader br = new BufferedReader(new FileReader(file));

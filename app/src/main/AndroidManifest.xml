@@ -11,10 +11,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CadProdutos">
-        <activity android:name=".SharedPreferencesScreen"></activity>
+        <activity android:name=".SharedPreferencesScreen" />
         <activity android:name=".model.GuardarFicheiroLocal" />
         <activity android:name=".FormularioProdutos" />
-        <activity android:name=".MainActivity">
+        <activity android:name=".MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
