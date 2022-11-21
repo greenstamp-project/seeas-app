@@ -68,6 +68,10 @@ public class FileHelpers {
 
         File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName);
 
+        if (!file.exists()) {
+            return new byte[0];
+        }
+
         byte[] tempBuf = new byte[100];
         int byteRead;
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();

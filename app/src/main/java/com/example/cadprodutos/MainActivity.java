@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.MenuItem;
 import android.view.View;
@@ -32,18 +33,21 @@ public class MainActivity extends AppCompatActivity {
 
     ListView lista;
     ProdutosDB bdHelper;
-    ArrayList<Produtos> list_viewProdutos;
+    ArrayList<String> listItems = new ArrayList<>();
     Produtos produto;
-    ArrayAdapter adapter;
+    ArrayAdapter<String> adapter;
 
     private static final int PERMISSION_REQUEST_STORAGE = 1000;
-    private static final int READ_REQUEST_CODE = 42;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        lista = (ListView) findViewById(R.id.list_view);
+        adapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_list_item_1, listItems);
+        lista.setAdapter(adapter);
 
+        adapter.add("starting...");
 
         //request file access permissions
         if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q)
@@ -60,85 +64,33 @@ public class MainActivity extends AppCompatActivity {
         }
 
         //read the parameters to run the tests
+        adapter.add("Reading parameters");
         Map<String, String> parameters = FileHelpers.readParameters();
-
+        adapter.add("Parameters loaded");
         //if function is makeFile
         if (Objects.equals(parameters.get(FileHelpers.functionName), FileHelpers.paramNameMakeFile)) {
-            //Log.d("mytag", parameters.get(FileHelpers.fileToReadName));
+            adapter.add("FUNCTION: make file selected");
 
             //read the file base
+            adapter.add("Reading file...");
             byte[] fileBytes = FileHelpers.readFileByBytes(parameters.get(FileHelpers.fileToReadName));
 
-            //get times to run value
-            int timesToRun = Integer.parseInt(Objects.requireNonNull(parameters.get(FileHelpers.timesToRun)));
-            //create the files
-            String[] fileToReadName = Objects.requireNonNull(parameters.get(FileHelpers.fileToReadName)).split("\\.");
-            for (int i = 0; i < timesToRun; i++) {
-                String fileName = fileToReadName[0] + i + "." + fileToReadName[1];
-                FileHelpers.createFiles(fileName, fileBytes);
+            if (fileBytes != null && fileBytes.length > 0) {
+                //get times to run value
+                int timesToRun = Integer.parseInt(Objects.requireNonNull(parameters.get(FileHelpers.timesToRun)));
+                //create the files
+                String[] fileToReadName = Objects.requireNonNull(parameters.get(FileHelpers.fileToReadName)).split("\\.");
+                for (int i = 0; i < timesToRun; i++) {
+                    adapter.add("Making copy " + i);
+                    String fileName = fileToReadName[0] + i + "." + fileToReadName[1];
+                    FileHelpers.createFiles(fileName, fileBytes);
+                }
+                adapter.add("Test finished!");
+            } else {
+                adapter.add("FILE NOT FOUND!");
             }
+
         }
-
-
-        lista = (ListView) findViewById(R.id.list_viewProdutos);
-        produto = new Produtos();
-
-
-        registerForContextMenu(lista);
-
-        lista.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapter, View view, int i, long l) {
-                Produtos produtoEscolhido = (Produtos) adapter.getItemAtPosition(i);
-
-                Intent intent = new Intent(MainActivity.this, FormularioProdutos.class);
-                intent.putExtra("produto-escolhido", produtoEscolhido);
-                startActivity(intent);
-
-            }
-        });
-
-
-        lista.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> adapter, View view, int i, long l) {
-                produto = (Produtos) adapter.getItemAtPosition(i);
-
-                //OnCreateContextMenu(addOnContextAvailableListener(),view,list_viewProdutos);
-
-                return false;
-            }
-        });
-
-
-        Button bt_Cadastrar = findViewById(R.id.bt_AcMain_CadProd);
-        bt_Cadastrar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, FormularioProdutos.class);
-                startActivity(intent);
-            }
-        });
-
-        Button bt_GardarLocal = findViewById(R.id.bt_AcMain_Guardar_Ficheiro_Local);
-        bt_GardarLocal.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent2 = new Intent(MainActivity.this, GuardarFicheiroLocal.class);
-                startActivity(intent2);
-            }
-        });
-
-
-        Button bt_ACSP = findViewById(R.id.bt_ACSP);
-        bt_ACSP.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent3 = new Intent(MainActivity.this, SharedPreferencesScreen.class);
-                startActivity(intent3);
-            }
-        });
-
     }
 
     @Override
@@ -148,8 +100,6 @@ public class MainActivity extends AppCompatActivity {
 
     protected void onResume() {
         super.onResume();
-        carregarProduto();
-
     }
 
 
@@ -173,12 +123,11 @@ public class MainActivity extends AppCompatActivity {
 
     public void carregarProduto() {
         bdHelper = new ProdutosDB(MainActivity.this);
-        list_viewProdutos = bdHelper.getLista();
         bdHelper.close();
 
-        if (list_viewProdutos != null) {
-            adapter = new ArrayAdapter<Produtos>(MainActivity.this, android.R.layout.simple_list_item_1, list_viewProdutos);
-            lista.setAdapter(adapter);
+        if (listItems != null) {
+
+
         }
         //  finish();
     }
