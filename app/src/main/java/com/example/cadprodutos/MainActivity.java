@@ -46,9 +46,9 @@ public class MainActivity extends AppCompatActivity {
 
 
         //request file access permissions
-        if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q)
+        if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q)
                 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_STORAGE);
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSION_REQUEST_STORAGE);
         } else if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
             if (!Environment.isExternalStorageManager()) {
                 //request for the permission
@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
         lista = (ListView) findViewById(R.id.list_viewProdutos);
         produto = new Produtos();
 
-        
+
         registerForContextMenu(lista);
 
         lista.setOnItemClickListener(new AdapterView.OnItemClickListener() {
