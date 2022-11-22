@@ -2,14 +2,12 @@ package com.example.cadprodutos.filehelpers;
 
 import android.os.Environment;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -18,7 +16,7 @@ import java.util.Map;
 import java.util.Objects;
 
 
-public class FileHelpers {
+public class FileHelper {
     public static String functionName = "function";
     public static String parametersFileName = "parameters.txt";
     public static String fileToReadName = "fileToRead";
@@ -26,7 +24,7 @@ public class FileHelpers {
 
 
     public static String paramNameMakeFile = "makeFile";
-    public static String paramNameSavePrefs = "savePrefs";
+    public static String paramNameSaveCloud = "saveCloud";
     public static String paramNameDatabaseSave = "databaseSave";
 
     public static Map<String, String> readParameters() {
@@ -88,7 +86,6 @@ public class FileHelpers {
             return null;
         }
     }
-
 
     public static void createFiles(String fileName, byte[] bytesToSave) {
         File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName);

@@ -1,6 +1,5 @@
 package com.example.cadprodutos;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.Manifest;
@@ -11,19 +10,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
-import android.util.Log;
-import android.view.ContextMenu;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ListView;
 
-import com.example.cadprodutos.filehelpers.FileHelpers;
-import com.example.cadprodutos.model.DBHelper.ProdutosDB;
-import com.example.cadprodutos.model.GuardarFicheiroLocal;
-import com.example.cadprodutos.model.Produtos;
+import com.example.cadprodutos.filehelpers.FileHelper;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -31,10 +24,8 @@ import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
 
-    ListView lista;
-    ProdutosDB bdHelper;
+    ListView listView;
     ArrayList<String> listItems = new ArrayList<>();
-    Produtos produto;
     ArrayAdapter<String> adapter;
 
     private static final int PERMISSION_REQUEST_STORAGE = 1000;
@@ -43,16 +34,16 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        lista = (ListView) findViewById(R.id.list_view);
-        adapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_list_item_1, listItems);
-        lista.setAdapter(adapter);
+        listView = (ListView) findViewById(R.id.list_view);
+        adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, listItems);
+        listView.setAdapter(adapter);
 
-        adapter.add("starting...");
+        adapter.add("STARTING...");
 
         //request file access permissions
         if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q)
                 && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, PERMISSION_REQUEST_STORAGE);
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.INTERNET}, PERMISSION_REQUEST_STORAGE);
         } else if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
             if (!Environment.isExternalStorageManager()) {
                 //request for the permission
@@ -65,71 +56,67 @@ public class MainActivity extends AppCompatActivity {
 
         //read the parameters to run the tests
         adapter.add("Reading parameters");
-        Map<String, String> parameters = FileHelpers.readParameters();
+        Map<String, String> parameters = FileHelper.readParameters();
         adapter.add("Parameters loaded");
         //if function is makeFile
-        if (Objects.equals(parameters.get(FileHelpers.functionName), FileHelpers.paramNameMakeFile)) {
+        if (Objects.equals(parameters.get(FileHelper.functionName), FileHelper.paramNameMakeFile)) {
             adapter.add("FUNCTION: make file selected");
 
             //read the file base
             adapter.add("Reading file...");
-            byte[] fileBytes = FileHelpers.readFileByBytes(parameters.get(FileHelpers.fileToReadName));
+            byte[] fileBytes = FileHelper.readFileByBytes(parameters.get(FileHelper.fileToReadName));
 
             if (fileBytes != null && fileBytes.length > 0) {
                 //get times to run value
-                int timesToRun = Integer.parseInt(Objects.requireNonNull(parameters.get(FileHelpers.timesToRun)));
+                int timesToRun = Integer.parseInt(Objects.requireNonNull(parameters.get(FileHelper.timesToRun)));
                 //create the files
-                String[] fileToReadName = Objects.requireNonNull(parameters.get(FileHelpers.fileToReadName)).split("\\.");
-                for (int i = 0; i < timesToRun; i++) {
+                String[] fileToReadName = Objects.requireNonNull(parameters.get(FileHelper.fileToReadName)).split("\\.");
+                for (int i = 1; i <= timesToRun; i++) {
                     adapter.add("Making copy " + i);
-                    String fileName = fileToReadName[0] + i + "." + fileToReadName[1];
-                    FileHelpers.createFiles(fileName, fileBytes);
+                    String fileName = fileToReadName[0] + "-" + i + "." + fileToReadName[1];
+                    FileHelper.createFiles(fileName, fileBytes);
                 }
                 adapter.add("Test finished!");
             } else {
                 adapter.add("FILE NOT FOUND!");
             }
+        } else if (Objects.equals(parameters.get(FileHelper.functionName), FileHelper.paramNameSaveCloud)) {
+            adapter.add("FUNCTION: send to cloud selected");
 
+            //read the file base
+            adapter.add("Reading file...");
+            byte[] fileBytes = FileHelper.readFileByBytes(parameters.get(FileHelper.fileToReadName));
+
+            if (fileBytes != null && fileBytes.length > 0) {
+                //get times to run value
+                int timesToRun = Integer.parseInt(Objects.requireNonNull(parameters.get(FileHelper.timesToRun)));
+                //create the files
+                String[] fileToReadName = Objects.requireNonNull(parameters.get(FileHelper.fileToReadName)).split("\\.");
+                sendToCloud(fileToReadName, fileBytes, timesToRun, 1);
+            } else {
+                adapter.add("FILE NOT FOUND!");
+            }
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
 
-    protected void onResume() {
-        super.onResume();
-    }
+    /*
+     * Sends the file to firebase storage*/
+    private void sendToCloud(String[] fileNameParts, byte[] fileBytes, int timesToRun, int runningTime) {
+        String fileName = fileNameParts[0] + "-" + runningTime + "." + fileNameParts[1];
+        adapter.add("Sending file " + runningTime);
+        final int _runTime = runningTime;
 
-
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-
-        MenuItem menuDelete = menu.add("Deletar Este Produto");
-        menuDelete.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+        FirebaseStorage.getInstance().getReference(fileName).putBytes(fileBytes).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
-            public boolean onMenuItemClick(MenuItem menuItem) {
-                bdHelper = new ProdutosDB(MainActivity.this);
-                bdHelper.deletarProduto(produto);
-                bdHelper.close();
-
-                carregarProduto();
-                return true;
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                adapter.add("Sent file " + fileName);
+                if (timesToRun >= _runTime + 1) {
+                    sendToCloud(fileNameParts, fileBytes, timesToRun, _runTime + 1);
+                } else {
+                    adapter.add("Test finished!");
+                }
             }
         });
     }
-
-    public void carregarProduto() {
-        bdHelper = new ProdutosDB(MainActivity.this);
-        bdHelper.close();
-
-        if (listItems != null) {
-
-
-        }
-        //  finish();
-    }
-
 }
