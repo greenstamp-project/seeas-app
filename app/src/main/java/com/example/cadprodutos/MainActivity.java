@@ -13,14 +13,22 @@ import android.provider.Settings;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+
+
 import com.example.cadprodutos.filehelpers.FileHelper;
+import com.example.cadprodutos.filehelpers.Repository;
+import com.example.cadprodutos.filehelpers.Api;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+
+//import network.Repository;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -58,7 +66,23 @@ public class MainActivity extends AppCompatActivity {
         adapter.add("Reading parameters");
         Map<String, String> parameters = FileHelper.readParameters();
         adapter.add("Parameters loaded");
-        //if function is makeFile
+
+        //if function is makeFile NESTE MOMENTO USAR O DASHBOARD, WHATNOW
+        Repository repository = new Repository();
+        try {
+           String res = repository.doWhatNowAsync().get();
+
+
+           System.out.println("@@@@@@@@@@@@@@@@"+res);
+
+
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
         if (Objects.equals(parameters.get(FileHelper.functionName), FileHelper.paramNameMakeFile)) {
             adapter.add("FUNCTION: make file selected");
 
@@ -76,6 +100,8 @@ public class MainActivity extends AppCompatActivity {
                     String fileName = fileToReadName[0] + "-" + i + "." + fileToReadName[1];
                     FileHelper.createFiles(fileName, fileBytes);
                 }
+                //Neste ponto fazer a medição | LOGDATE
+                // Fazer o DONE
                 adapter.add("Test finished!");
             } else {
                 adapter.add("FILE NOT FOUND!");
