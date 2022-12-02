@@ -21,11 +21,13 @@ public class FileHelper {
     public static String parametersFileName = "parameters.txt";
     public static String fileToReadName = "fileToRead";
     public static String timesToRun = "timesToRun";
+    public static String email = "email";
+    public static String pass = "pass";
 
 
     public static String paramNameMakeFile = "makeFile";
     public static String paramNameSaveCloud = "saveCloud";
-    public static String paramNameDatabaseSave = "databaseSave";
+    public static String paramNameLocalLogin = "localLogin";
 
     public static Map<String, String> readParameters() {
         Map<String, String> parameters = new HashMap<>();
@@ -36,9 +38,12 @@ public class FileHelper {
         if (!file.exists()) {
             try {
                 FileOutputStream fos = new FileOutputStream(file);
-                fos.write(("function=makeFile\n" +
+                String fileStartContent = "function=makeFile\n" +
                         "fileToRead=somefile.txt\n" +
-                        "timesToRun=1").getBytes());
+                        "timesToRun=1\n" +
+                        "email=test1@gmail.com\n" +
+                        "pass=test1";
+                fos.write((fileStartContent).getBytes());
                 fos.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -99,4 +104,8 @@ public class FileHelper {
             e.printStackTrace();
         }
     }
+
+
 }
+
+

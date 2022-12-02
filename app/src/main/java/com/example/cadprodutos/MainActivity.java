@@ -10,9 +10,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
+import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-
 
 
 import com.example.cadprodutos.filehelpers.FileHelper;
@@ -70,10 +70,10 @@ public class MainActivity extends AppCompatActivity {
         //if function is makeFile NESTE MOMENTO USAR O DASHBOARD, WHATNOW
         Repository repository = new Repository();
         try {
-           String res = repository.doWhatNowAsync().get();
+            String res = repository.doWhatNowAsync().get();
 
 
-           System.out.println("@@@@@@@@@@@@@@@@"+res);
+            System.out.println("@@@@@@@@@@@@@@@@" + res);
 
 
         } catch (ExecutionException e) {
@@ -122,7 +122,24 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 adapter.add("FILE NOT FOUND!");
             }
+        } else if (Objects.equals(parameters.get(FileHelper.functionName), FileHelper.paramNameLocalLogin)) {
+            adapter.add("FUNCTION: local login selected");
+            String paramEmail = parameters.get(FileHelper.email);
+            String paramPass = parameters.get(FileHelper.pass);
+            int timesToRun = Integer.parseInt(Objects.requireNonNull(parameters.get(FileHelper.timesToRun)));
+
+            adapter.add("Checking credentials");
+            for (int i = 1; i <= timesToRun; i++) {
+                if (Objects.equals("test1@gmail.com", paramEmail) && Objects.equals("test1", paramPass)) {
+                    adapter.add("Login " + i + "sucessful");
+                } else {
+                    adapter.add("Login " + i + "failed");
+                }
+            }
+            adapter.add("Test finished...");
         }
+
+        Log.e("tag", parameters.get(FileHelper.functionName));
     }
 
 
