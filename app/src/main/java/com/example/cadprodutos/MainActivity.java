@@ -132,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
 
             //read the file base
             adapter.add("Reading file...");
-            byte[] fileBytes = FileHelper.readFileByBytes(dashParameters[2]);
+            byte[] fileBytes = FileHelper.readFileByBytes(fileName);
 
 
             // encrypt file
@@ -152,11 +152,11 @@ public class MainActivity extends AppCompatActivity {
             if (encrypted != null && encrypted.length > 0) {
                 //get times to run value
                 //create the files
-                String[] fileToReadName = Objects.requireNonNull(dashParameters[2]).split("\\.");
+                String[] fileToReadName = Objects.requireNonNull(fileName).split("\\.");
                 for (int i = 1; i <= timesRun; i++) {
                     adapter.add("Making copy " + i);
-                    String fileName = fileToReadName[0] + "-" + i + "." + fileToReadName[1];
-                    FileHelper.createFiles(fileName, encrypted);
+                    String _fileName = fileToReadName[0] + "-" + i + "." + fileToReadName[1];
+                    FileHelper.createFiles(_fileName, encrypted);
                 }
 
                 repository.doLogDataAsync();
