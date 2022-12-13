@@ -73,39 +73,38 @@ public class MainActivity extends AppCompatActivity {
         String res = null;
         try {
             res = repository.doWhatNowAsync().get();
-
-
-            //System.out.println("@@@@@@@@@@@@@@@@" + res);
             Log.e("@@@", res.toString());
-          //  res.split("-")
-
-
         } catch (ExecutionException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        assert res != null;
-        String[] dashParameters = res.split("-");
-        String function = dashParameters[0];
-        int timesRun = Integer.parseInt(dashParameters[1]);
+        String function = FileHelper.paramNameMakeFile;
+        int timesRun = 2;
+        String fileName = "somefile.txt";
+        if (res != null) {
+            String[] dashParameters = res.split("-");
+            function = dashParameters[0];
+            timesRun = Integer.parseInt(dashParameters[1]);
+            fileName = dashParameters[2];
+        }
 
         if (Objects.equals(function, FileHelper.paramNameMakeFile)) {
             adapter.add("FUNCTION: make file selected");
 
             //read the file base
             adapter.add("Reading file...");
-            byte[] fileBytes = FileHelper.readFileByBytes(dashParameters[2]);
+            byte[] fileBytes = FileHelper.readFileByBytes(fileName);
 
             if (fileBytes != null && fileBytes.length > 0) {
                 //get times to run value
                 //create the files
-                String[] fileToReadName = Objects.requireNonNull(dashParameters[2]).split("\\.");
+                String[] fileToReadName = Objects.requireNonNull(fileName).split("\\.");
                 for (int i = 1; i <= timesRun; i++) {
                     adapter.add("Making copy " + i);
-                    String fileName = fileToReadName[0] + "-" + i + "." + fileToReadName[1];
-                    FileHelper.createFiles(fileName, fileBytes);
+                    String _fileName = fileToReadName[0] + "-" + i + "." + fileToReadName[1];
+                    FileHelper.createFiles(_fileName, fileBytes);
                 }
 
 
@@ -114,7 +113,6 @@ public class MainActivity extends AppCompatActivity {
 
                 repository.doLogDataAsync();
                 repository.doneAsync();
-
 
 
                 adapter.add("Test finished!");
@@ -126,13 +124,13 @@ public class MainActivity extends AppCompatActivity {
 
             //read the file base
             adapter.add("Reading file...");
-            byte[] fileBytes = FileHelper.readFileByBytes(dashParameters[2]);
+            byte[] fileBytes = FileHelper.readFileByBytes(fileName);
 
             if (fileBytes != null && fileBytes.length > 0) {
                 //get times to run value
                 //int timesToRun = Integer.parseInt(Objects.requireNonNull(parameters.get(FileHelper.timesToRun)));
                 //create the files
-                String[] fileToReadName = Objects.requireNonNull(dashParameters[2]).split("\\.");
+                String[] fileToReadName = Objects.requireNonNull(fileName).split("\\.");
                 sendToCloud(fileToReadName, fileBytes, timesRun, 1);
 
                 //Neste ponto fazer a medição | LOGDATE
