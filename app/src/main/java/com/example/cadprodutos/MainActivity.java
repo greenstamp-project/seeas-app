@@ -22,11 +22,18 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.UploadTask;
 
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 
 //import network.Repository;
 
@@ -121,6 +128,47 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 adapter.add("FILE NOT FOUND!");
             }
+        } else if (Objects.equals(function, FileHelper.paramNameMakeEncFile)) {
+            // SAVE ENCRYPTED FILE
+            adapter.add("FUNCTION: make encrypted file selected");
+
+            //read the file base
+            adapter.add("Reading file...");
+            byte[] fileBytes = FileHelper.readFileByBytes(dashParameters[2]);
+
+
+            // encrypt file
+            String SECRET_KEY = "aesEncryptionKey";
+            SecretKeySpec keySpec = new SecretKeySpec(SECRET_KEY.getBytes(StandardCharsets.UTF_8), "AES");
+
+            byte[] encrypted = null;
+            try {
+                Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+                cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+                byte[] iv = cipher.getIV();
+                encrypted = cipher.doFinal(fileBytes);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            if (encrypted != null && encrypted.length > 0) {
+                //get times to run value
+                //create the files
+                String[] fileToReadName = Objects.requireNonNull(dashParameters[2]).split("\\.");
+                for (int i = 1; i <= timesRun; i++) {
+                    adapter.add("Making copy " + i);
+                    String fileName = fileToReadName[0] + "-" + i + "." + fileToReadName[1];
+                    FileHelper.createFiles(fileName, encrypted);
+                }
+
+                repository.doLogDataAsync();
+                repository.doneAsync();
+
+                adapter.add("Test finished!");
+            } else {
+                adapter.add("FILE NOT FOUND!");
+            }
+
         } else if (Objects.equals(function, FileHelper.paramNameSaveCloud)) {
             adapter.add("FUNCTION: send to cloud selected");
 
