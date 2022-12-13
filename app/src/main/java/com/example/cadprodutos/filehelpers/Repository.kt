@@ -10,11 +10,17 @@ import java.util.concurrent.CompletableFuture
 class Repository {
 
     // IP DO COMPUTADOR (HOST)
-    private val ip = "192.168.1.79"
+    private val ip = "192.168.1.70"
     private val baseUrl = "http://$ip:3000/"
 
     fun doWhatNowAsync(): CompletableFuture<String> =
         GlobalScope.future { started() }
+
+    fun doLogDataAsync(): CompletableFuture<String> =
+        GlobalScope.future { logData() }
+
+    fun doneAsync(): CompletableFuture<String> =
+        GlobalScope.future { done() }
 
     private val service = Retrofit.Builder()
         .baseUrl(baseUrl)

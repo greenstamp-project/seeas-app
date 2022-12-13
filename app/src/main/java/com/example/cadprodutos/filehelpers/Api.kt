@@ -4,7 +4,7 @@ import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Header
 
-private const val APP_ID = "com.android.starter"
+private const val APP_ID = "com.example.cadprodutos"
 private const val FRAMEWORK = "JAVA"
 private const val TEST_TYPE = "benchmarkGame"
 

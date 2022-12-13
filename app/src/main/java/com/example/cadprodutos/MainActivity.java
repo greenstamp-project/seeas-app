@@ -64,16 +64,20 @@ public class MainActivity extends AppCompatActivity {
 
         //read the parameters to run the tests
         adapter.add("Reading parameters");
-        Map<String, String> parameters = FileHelper.readParameters();
+        //Map<String, String> parameters = FileHelper.readParameters();
         adapter.add("Parameters loaded");
 
         //if function is makeFile NESTE MOMENTO USAR O DASHBOARD, WHATNOW
+
         Repository repository = new Repository();
+        String res = null;
         try {
-            String res = repository.doWhatNowAsync().get();
+            res = repository.doWhatNowAsync().get();
 
 
-            System.out.println("@@@@@@@@@@@@@@@@" + res);
+            //System.out.println("@@@@@@@@@@@@@@@@" + res);
+            Log.e("@@@", res.toString());
+          //  res.split("-")
 
 
         } catch (ExecutionException e) {
@@ -82,47 +86,64 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
+        assert res != null;
+        String[] dashParameters = res.split("-");
+        String function = dashParameters[0];
+        int timesRun = Integer.parseInt(dashParameters[1]);
 
-        if (Objects.equals(parameters.get(FileHelper.functionName), FileHelper.paramNameMakeFile)) {
+        if (Objects.equals(function, FileHelper.paramNameMakeFile)) {
             adapter.add("FUNCTION: make file selected");
 
             //read the file base
             adapter.add("Reading file...");
-            byte[] fileBytes = FileHelper.readFileByBytes(parameters.get(FileHelper.fileToReadName));
+            byte[] fileBytes = FileHelper.readFileByBytes(dashParameters[2]);
 
             if (fileBytes != null && fileBytes.length > 0) {
                 //get times to run value
-                int timesToRun = Integer.parseInt(Objects.requireNonNull(parameters.get(FileHelper.timesToRun)));
                 //create the files
-                String[] fileToReadName = Objects.requireNonNull(parameters.get(FileHelper.fileToReadName)).split("\\.");
-                for (int i = 1; i <= timesToRun; i++) {
+                String[] fileToReadName = Objects.requireNonNull(dashParameters[2]).split("\\.");
+                for (int i = 1; i <= timesRun; i++) {
                     adapter.add("Making copy " + i);
                     String fileName = fileToReadName[0] + "-" + i + "." + fileToReadName[1];
                     FileHelper.createFiles(fileName, fileBytes);
                 }
+
+
                 //Neste ponto fazer a medição | LOGDATE
                 // Fazer o DONE
+
+                repository.doLogDataAsync();
+                repository.doneAsync();
+
+
+
                 adapter.add("Test finished!");
             } else {
                 adapter.add("FILE NOT FOUND!");
             }
-        } else if (Objects.equals(parameters.get(FileHelper.functionName), FileHelper.paramNameSaveCloud)) {
+        } else if (Objects.equals(function, FileHelper.paramNameSaveCloud)) {
             adapter.add("FUNCTION: send to cloud selected");
 
             //read the file base
             adapter.add("Reading file...");
-            byte[] fileBytes = FileHelper.readFileByBytes(parameters.get(FileHelper.fileToReadName));
+            byte[] fileBytes = FileHelper.readFileByBytes(dashParameters[2]);
 
             if (fileBytes != null && fileBytes.length > 0) {
                 //get times to run value
-                int timesToRun = Integer.parseInt(Objects.requireNonNull(parameters.get(FileHelper.timesToRun)));
+                //int timesToRun = Integer.parseInt(Objects.requireNonNull(parameters.get(FileHelper.timesToRun)));
                 //create the files
-                String[] fileToReadName = Objects.requireNonNull(parameters.get(FileHelper.fileToReadName)).split("\\.");
-                sendToCloud(fileToReadName, fileBytes, timesToRun, 1);
+                String[] fileToReadName = Objects.requireNonNull(dashParameters[2]).split("\\.");
+                sendToCloud(fileToReadName, fileBytes, timesRun, 1);
+
+                //Neste ponto fazer a medição | LOGDATE
+                // Fazer o DONE
+
+                repository.doLogDataAsync();
+                repository.doneAsync();
             } else {
                 adapter.add("FILE NOT FOUND!");
             }
-        } else if (Objects.equals(parameters.get(FileHelper.functionName), FileHelper.paramNameLocalLogin)) {
+        } /*else if (Objects.equals(parameters.get(FileHelper.functionName), FileHelper.paramNameLocalLogin)) {
             adapter.add("FUNCTION: local login selected");
             String paramEmail = parameters.get(FileHelper.email);
             String paramPass = parameters.get(FileHelper.pass);
@@ -137,9 +158,9 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             adapter.add("Test finished...");
-        }
+        }*/
 
-        Log.e("tag", parameters.get(FileHelper.functionName));
+        //Log.e("tag", parameters.get(FileHelper.functionName));
     }
 
 
@@ -161,5 +182,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
     }
 }
