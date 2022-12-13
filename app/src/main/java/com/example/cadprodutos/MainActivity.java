@@ -81,9 +81,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             res = repository.doWhatNowAsync().get();
             Log.e("@@@", res.toString());
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
         }
 
