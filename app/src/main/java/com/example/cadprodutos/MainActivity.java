@@ -203,6 +203,10 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             adapter.add("Test finished...");
+
+            repository.doLogDataAsync();
+            repository.doneAsync();
+
         }
 
         //Log.e("tag", parameters.get(FileHelper.functionName));
