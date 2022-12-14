@@ -11,11 +11,24 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 
 public class FileHelper {
@@ -31,6 +44,10 @@ public class FileHelper {
     public static String paramNameMakeEncFile = "makeEncFile";
     public static String paramNameSaveCloud = "saveCloud";
     public static String paramNameLocalLogin = "localLogin";
+    public static String paramNameLocalLoginEnc = "localLoginEnc";
+
+
+    public static String SECRET_KEY = "aesEncryptionKey";
 
 
     public static Map<String, String> readParameters() {
@@ -143,6 +160,54 @@ public class FileHelper {
         }
 
         return credentials;
+    }
+
+    public static byte[] readCredentialsEnc(IvParameterSpec ivSpec) {
+        byte[] bytes = new byte[0];
+
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "encripted-credentials.txt");
+
+        //se o arquivo não existir cria com os parâmetros iniciais
+        if (!file.exists()) {
+            try {
+
+                // encrypt file
+                //String SECRET_KEY = "aesEncryptionKey";
+                SecretKeySpec keySpec = new SecretKeySpec(SECRET_KEY.getBytes(StandardCharsets.UTF_8), "AES");
+
+                FileOutputStream fos = new FileOutputStream(file);
+                String fileStartContent = "test1@test.compass1";
+                byte[] fileBytes = fileStartContent.getBytes(StandardCharsets.UTF_8);
+
+                Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+                cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
+                byte[] encrypted = cipher.doFinal(fileBytes);
+
+                fos.write(encrypted);
+                fos.close();
+            } catch (IOException | NoSuchPaddingException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException | IllegalBlockSizeException | InvalidAlgorithmParameterException e) {
+                e.printStackTrace();
+            }
+        }
+
+        try {
+            FileInputStream inputStream = new FileInputStream(file);
+            bytes = new byte[inputStream.available()];
+            inputStream.read(bytes);
+            //Log.e("mytag", new String(bytes));
+        } catch (IOException e) {
+            Log.e("mytag", Objects.requireNonNull(e.getMessage()));
+            e.printStackTrace();
+        }
+
+        return bytes;
+    }
+
+    public static IvParameterSpec generateIv() {
+        byte[] iv = "lskfjkdljfsalkdjfkds".getBytes(StandardCharsets.UTF_8);
+        byte[] slice = Arrays.copyOfRange(iv, 0, 16);
+
+        return new IvParameterSpec(slice);
     }
 }
 

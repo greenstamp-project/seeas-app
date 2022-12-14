@@ -1,7 +1,5 @@
 package com.example.cadprodutos;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -10,29 +8,30 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
-import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.cadprodutos.filehelpers.FileHelper;
 import com.example.cadprodutos.filehelpers.Repository;
-import com.example.cadprodutos.filehelpers.Api;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.UploadTask;
 
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 //import network.Repository;
@@ -44,6 +43,8 @@ public class MainActivity extends AppCompatActivity {
     ArrayAdapter<String> adapter;
 
     private static final int PERMISSION_REQUEST_STORAGE = 1000;
+
+    private static final IvParameterSpec ivSpec = FileHelper.generateIv();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,9 +71,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         //read the parameters to run the tests
-        adapter.add("Reading parameters");
+        //adapter.add("Reading parameters");
         //Map<String, String> parameters = FileHelper.readParameters();
-        adapter.add("Parameters loaded");
+        //adapter.add("Parameters loaded");
 
         //if function is makeFile NESTE MOMENTO USAR O DASHBOARD, WHATNOW
 
@@ -80,12 +81,12 @@ public class MainActivity extends AppCompatActivity {
         String res = null;
         try {
             res = repository.doWhatNowAsync().get();
-            Log.e("@@@", res.toString());
+            //Log.e("@@@", res.toString());
         } catch (ExecutionException | InterruptedException e) {
             e.printStackTrace();
         }
 
-        String function = FileHelper.paramNameLocalLogin;
+        String function = FileHelper.paramNameLocalLoginEnc;
         int timesRun = 20;
         String fileName = "somefile.txt";
         String email = "test1@test.com";
@@ -143,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
                 cipher.init(Cipher.ENCRYPT_MODE, keySpec);
-                byte[] iv = cipher.getIV();
+                //byte[] iv = cipher.getIV();
                 encrypted = cipher.doFinal(fileBytes);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -183,7 +184,6 @@ public class MainActivity extends AppCompatActivity {
 
                 //Neste ponto fazer a medição | LOGDATE
                 // Fazer o DONE
-
                 repository.doLogDataAsync();
                 repository.doneAsync();
             } else {
@@ -203,13 +203,42 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             adapter.add("Test finished...");
+        } else if (Objects.equals(function, FileHelper.paramNameLocalLoginEnc)) {
+            adapter.add("FUNCTION: local login encrypted selected");
+
+            adapter.add("Checking credentials");
+            for (int i = 1; i <= timesRun; i++) {
+                byte[] savedCredentials = FileHelper.readCredentialsEnc(ivSpec);
+                byte[] credentialsBytes = (email + pass).getBytes();
+
+                byte[] encrypted = null;
+                // encrypt file
+                SecretKeySpec keySpec = new SecretKeySpec(FileHelper.SECRET_KEY.getBytes(StandardCharsets.UTF_8), "AES");
+                try {
+                    Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+                    cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
+                    encrypted = cipher.doFinal(credentialsBytes);
+                } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException | InvalidAlgorithmParameterException e) {
+                    e.printStackTrace();
+                }
+
+                //Log.i("mytag", new String(encrypted));
+
+                repository.doLogDataAsync();
+                repository.doneAsync();
+
+                if (Arrays.equals(encrypted, savedCredentials)) {
+                    adapter.add("Login " + i + " sucessful");
+                } else {
+                    adapter.add("Login " + i + " failed");
+                }
+            }
+            adapter.add("Test finished...");
 
             repository.doLogDataAsync();
             repository.doneAsync();
 
         }
-
-        //Log.e("tag", parameters.get(FileHelper.functionName));
     }
 
 
@@ -220,15 +249,12 @@ public class MainActivity extends AppCompatActivity {
         adapter.add("Sending file " + runningTime);
         final int _runTime = runningTime;
 
-        FirebaseStorage.getInstance().getReference(fileName).putBytes(fileBytes).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-            @Override
-            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                adapter.add("Sent file " + fileName);
-                if (timesToRun >= _runTime + 1) {
-                    sendToCloud(fileNameParts, fileBytes, timesToRun, _runTime + 1);
-                } else {
-                    adapter.add("Test finished!");
-                }
+        FirebaseStorage.getInstance().getReference(fileName).putBytes(fileBytes).addOnSuccessListener(taskSnapshot -> {
+            adapter.add("Sent file " + fileName);
+            if (timesToRun >= _runTime + 1) {
+                sendToCloud(fileNameParts, fileBytes, timesToRun, _runTime + 1);
+            } else {
+                adapter.add("Test finished!");
             }
         });
 
