@@ -12,7 +12,9 @@ pass=test1<br />
 
 | Parameter | Possible Values | Description |
 | :------------ |:---------------| :-----|
-| function |makeFile, saveCloud, localLogin, remoteLogin| **makeFile**: create copies of the selected file on the Downloads folder writen on the fileToRead param. <br />**saveCloud**: sends the copies of the selected file on the Downloads folder to the firebase storage. <br />**localLogin**: realizes a test with string to check if the login will work or not. <br />**remoteLogin**: realizes test with remote login on firebase|
+| function |makeFile, makeEncFile, saveCloud, localLogin, remoteLogin| **makeFile**: create copies of the selected file on the Downloads folder writen on the fileToRead param. <br />
+**makeEncFile**: create Encripted copies of the selected file on the Downloads folder writen on the fileToRead param <br />
+**saveCloud**: sends the copies of the selected file on the Downloads folder to the firebase storage. <br />**localLogin**: realizes a test with string to check if the login will work or not. <br />**remoteLogin**: realizes test with remote login on firebase|
 |fileToRead|filename|the name of the file to be read, the file should be placed in the Downloads folder|
 |timesToRun|a number|The number of times the function should perform|
 |email|test1@gmail.com|if sucess login is required put the correct email (default is test1@gmail.com), if failed login is required put a different email
