@@ -85,9 +85,11 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        String function = FileHelper.paramNameMakeFile;
-        int timesRun = 2;
+        String function = FileHelper.paramNameLocalLogin;
+        int timesRun = 20;
         String fileName = "somefile.txt";
+        String email = "test1@test.com";
+        String pass = "pass1";
         if (res != null) {
             String[] dashParameters = res.split("-");
             function = dashParameters[0];
@@ -187,22 +189,21 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 adapter.add("FILE NOT FOUND!");
             }
-        } /*else if (Objects.equals(parameters.get(FileHelper.functionName), FileHelper.paramNameLocalLogin)) {
+        } else if (Objects.equals(function, FileHelper.paramNameLocalLogin)) {
             adapter.add("FUNCTION: local login selected");
-            String paramEmail = parameters.get(FileHelper.email);
-            String paramPass = parameters.get(FileHelper.pass);
-            int timesToRun = Integer.parseInt(Objects.requireNonNull(parameters.get(FileHelper.timesToRun)));
 
             adapter.add("Checking credentials");
-            for (int i = 1; i <= timesToRun; i++) {
-                if (Objects.equals("test1@gmail.com", paramEmail) && Objects.equals("test1", paramPass)) {
-                    adapter.add("Login " + i + "sucessful");
+            for (int i = 1; i <= timesRun; i++) {
+                List<String> savedCredentials = FileHelper.readCredentialsNotEnc();
+                if (Objects.equals(savedCredentials.get(0), email)
+                        && Objects.equals(savedCredentials.get(1), pass)) {
+                    adapter.add("Login " + i + " sucessful");
                 } else {
-                    adapter.add("Login " + i + "failed");
+                    adapter.add("Login " + i + " failed");
                 }
             }
             adapter.add("Test finished...");
-        }*/
+        }
 
         //Log.e("tag", parameters.get(FileHelper.functionName));
     }

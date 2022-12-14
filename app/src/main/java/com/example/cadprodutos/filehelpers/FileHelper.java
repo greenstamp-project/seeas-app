@@ -11,7 +11,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -69,6 +71,7 @@ public class FileHelper {
         return parameters;
     }
 
+
     public static byte[] readFileByBytes(String fileName) {
 
         File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName);
@@ -107,7 +110,38 @@ public class FileHelper {
         }
     }
 
+    public static List<String> readCredentialsNotEnc() {
+        List<String> credentials = new ArrayList<>();
 
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "no-encripted-credentials.txt");
+
+        //se o arquivo não existir cria com os parâmetros iniciais
+        if (!file.exists()) {
+            try {
+                FileOutputStream fos = new FileOutputStream(file);
+                String fileStartContent = "test1@test.com\n" + "pass1";
+                fos.write((fileStartContent).getBytes());
+                fos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(file));
+            String line;
+            while ((line = br.readLine()) != null) {
+                credentials.add(line);
+            }
+            br.close();
+
+        } catch (IOException e) {
+            Log.e("mytag", Objects.requireNonNull(e.getMessage()));
+            e.printStackTrace();
+        }
+
+        return credentials;
+    }
 }
 
 
