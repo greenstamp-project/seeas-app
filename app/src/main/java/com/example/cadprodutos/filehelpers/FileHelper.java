@@ -1,7 +1,10 @@
 package com.example.cadprodutos.filehelpers;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Environment;
 import android.util.Log;
+
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -45,10 +48,11 @@ public class FileHelper {
     public static String paramNameSaveCloud = "saveCloud";
     public static String paramNameLocalLogin = "localLogin";
     public static String paramNameLocalLoginEnc = "localLoginEnc";
+    public static String paramNameLocalLoginSharedPref = "localLoginSharedPref";
+    public static String paramNameLocalLoginEncSharedPref = "localLoginEncSharedPref";
 
 
     public static String SECRET_KEY = "aesEncryptionKey";
-
 
     public static Map<String, String> readParameters() {
         Map<String, String> parameters = new HashMap<>();
@@ -88,7 +92,6 @@ public class FileHelper {
         return parameters;
     }
 
-
     public static byte[] readFileByBytes(String fileName) {
 
         File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName);
@@ -114,8 +117,6 @@ public class FileHelper {
         }
     }
 
-
-
     public static void createFiles(String fileName, byte[] bytesToSave) {
         File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), fileName);
 
@@ -127,6 +128,34 @@ public class FileHelper {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static SharedPreferences getSPEditor(Context context) {
+        return context.getSharedPreferences("prefs", Context.MODE_PRIVATE);
+    }
+
+    public static Map<String, String> getCredentialsFromPreferences(Context context) {
+        Map<String, String> credentials = new HashMap<>();
+
+        SharedPreferences sp = getSPEditor(context);
+
+        //email
+        String emailSaved = sp.getString(email, null);
+        //is the first run
+        if (emailSaved == null) {
+            SharedPreferences.Editor editor = sp.edit();
+            editor.putString(email, "test1@test.com");
+            editor.putString(pass, "pass1");
+            editor.commit();
+        }
+
+        emailSaved = sp.getString(email, null);
+        String passSaved = sp.getString(pass, null);
+
+        credentials.put(email, emailSaved);
+        credentials.put(pass, passSaved);
+
+        return credentials;
     }
 
     public static List<String> readCredentialsNotEnc() {

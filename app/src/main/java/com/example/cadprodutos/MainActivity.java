@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
+import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -24,6 +25,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
@@ -86,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        String function = FileHelper.paramNameLocalLoginEnc;
+        String function = FileHelper.paramNameLocalLoginSharedPref;
         int timesRun = 20;
         String fileName = "somefile.txt";
         String email = "test1@test.com";
@@ -202,6 +204,10 @@ public class MainActivity extends AppCompatActivity {
                     adapter.add("Login " + i + " failed");
                 }
             }
+
+            repository.doLogDataAsync();
+            repository.doneAsync();
+
             adapter.add("Test finished...");
         } else if (Objects.equals(function, FileHelper.paramNameLocalLoginEnc)) {
             adapter.add("FUNCTION: local login encrypted selected");
@@ -237,7 +243,28 @@ public class MainActivity extends AppCompatActivity {
 
             repository.doLogDataAsync();
             repository.doneAsync();
+        } else if (Objects.equals(function, FileHelper.paramNameLocalLoginSharedPref)) {
+            adapter.add("FUNCTION: local login prefs selected");
 
+            adapter.add("Checking credentials");
+            for (int i = 1; i <= timesRun; i++) {
+                Map<String, String> savedCredentials = FileHelper.getCredentialsFromPreferences(this);
+
+                Log.e("mytag", savedCredentials.get(FileHelper.email));
+                Log.i("mytag", email);
+
+                if (Objects.equals(savedCredentials.get(FileHelper.email), email)
+                        && Objects.equals(savedCredentials.get(FileHelper.pass), pass)) {
+                    adapter.add("Login " + i + " sucessful");
+                } else {
+                    adapter.add("Login " + i + " failed");
+                }
+            }
+
+            repository.doLogDataAsync();
+            repository.doneAsync();
+
+            adapter.add("Test finished...");
         }
     }
 
