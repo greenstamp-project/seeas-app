@@ -8,7 +8,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
-import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -36,7 +35,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-//import network.Repository;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -52,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        listView = (ListView) findViewById(R.id.list_view);
+        listView = findViewById(R.id.list_view);
         adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, listItems);
         listView.setAdapter(adapter);
 
@@ -88,186 +86,216 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        String function = FileHelper.paramNameLocalLoginSharedPref;
-        int timesRun = 20;
-        String fileName = "somefile.txt";
-        String email = "test1@test.com";
-        String pass = "pass1";
+        String function = FileHelper.paramNameLocalLoginEncSharedPref;
+        int timesRun = 3;
+        String fileName = FileHelper.defaultFileName;
+        String email = FileHelper.defaultEmail;
+        String pass = FileHelper.defaultPass;
         if (res != null) {
             String[] dashParameters = res.split("-");
-            function = dashParameters[0];
-            timesRun = Integer.parseInt(dashParameters[1]);
-            fileName = dashParameters[2];
+            function = (dashParameters[0] != null) ? dashParameters[0] : FileHelper.paramNameMakeFile;
+            timesRun = (dashParameters[1] != null) ? Integer.parseInt(dashParameters[1]) : 1;
+            fileName = (dashParameters[2] != null) ? dashParameters[2] : FileHelper.defaultFileName;
+            email = (dashParameters[3] != null) ? dashParameters[3] : FileHelper.defaultEmail;
+            pass = (dashParameters[3] != null) ? dashParameters[3] : FileHelper.defaultPass;
         }
 
         if (Objects.equals(function, FileHelper.paramNameMakeFile)) {
-            adapter.add("FUNCTION: make file selected");
-
-            //read the file base
-            adapter.add("Reading file...");
-            byte[] fileBytes = FileHelper.readFileByBytes(fileName);
-
-            if (fileBytes != null && fileBytes.length > 0) {
-                //get times to run value
-                //create the files
-                String[] fileToReadName = Objects.requireNonNull(fileName).split("\\.");
-                for (int i = 1; i <= timesRun; i++) {
-                    adapter.add("Making copy " + i);
-                    String _fileName = fileToReadName[0] + "-" + i + "." + fileToReadName[1];
-                    FileHelper.createFiles(_fileName, fileBytes);
-                }
-
-
-                //Neste ponto fazer a medição | LOGDATE
-                // Fazer o DONE
-
-                repository.doLogDataAsync();
-                repository.doneAsync();
-
-
-                adapter.add("Test finished!");
-            } else {
-                adapter.add("FILE NOT FOUND!");
-            }
+            makeFileFunctionNotEncrypted(fileName, timesRun, repository);
         } else if (Objects.equals(function, FileHelper.paramNameMakeEncFile)) {
-            // SAVE ENCRYPTED FILE
-            adapter.add("FUNCTION: make encrypted file selected");
-
-            //read the file base
-            adapter.add("Reading file...");
-            byte[] fileBytes = FileHelper.readFileByBytes(fileName);
-
-
-            // encrypt file
-            String SECRET_KEY = "aesEncryptionKey";
-            SecretKeySpec keySpec = new SecretKeySpec(SECRET_KEY.getBytes(StandardCharsets.UTF_8), "AES");
-
-            byte[] encrypted = null;
-            try {
-                Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-                cipher.init(Cipher.ENCRYPT_MODE, keySpec);
-                //byte[] iv = cipher.getIV();
-                encrypted = cipher.doFinal(fileBytes);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            if (encrypted != null && encrypted.length > 0) {
-                //get times to run value
-                //create the files
-                String[] fileToReadName = Objects.requireNonNull(fileName).split("\\.");
-                for (int i = 1; i <= timesRun; i++) {
-                    adapter.add("Making copy " + i);
-                    String _fileName = fileToReadName[0] + "-" + i + "." + fileToReadName[1];
-                    FileHelper.createFiles(_fileName, encrypted);
-                }
-
-                repository.doLogDataAsync();
-                repository.doneAsync();
-
-                adapter.add("Test finished!");
-            } else {
-                adapter.add("FILE NOT FOUND!");
-            }
-
-        } else if (Objects.equals(function, FileHelper.paramNameSaveCloud)) {
-            adapter.add("FUNCTION: send to cloud selected");
-
-            //read the file base
-            adapter.add("Reading file...");
-            byte[] fileBytes = FileHelper.readFileByBytes(fileName);
-
-            if (fileBytes != null && fileBytes.length > 0) {
-                //get times to run value
-                //int timesToRun = Integer.parseInt(Objects.requireNonNull(parameters.get(FileHelper.timesToRun)));
-                //create the files
-                String[] fileToReadName = Objects.requireNonNull(fileName).split("\\.");
-                sendToCloud(fileToReadName, fileBytes, timesRun, 1);
-
-                //Neste ponto fazer a medição | LOGDATE
-                // Fazer o DONE
-                repository.doLogDataAsync();
-                repository.doneAsync();
-            } else {
-                adapter.add("FILE NOT FOUND!");
-            }
-        } else if (Objects.equals(function, FileHelper.paramNameLocalLogin)) {
-            adapter.add("FUNCTION: local login selected");
-
-            adapter.add("Checking credentials");
-            for (int i = 1; i <= timesRun; i++) {
-                List<String> savedCredentials = FileHelper.readCredentialsNotEnc();
-                if (Objects.equals(savedCredentials.get(0), email)
-                        && Objects.equals(savedCredentials.get(1), pass)) {
-                    adapter.add("Login " + i + " sucessful");
-                } else {
-                    adapter.add("Login " + i + " failed");
-                }
-            }
-
-            repository.doLogDataAsync();
-            repository.doneAsync();
-
-            adapter.add("Test finished...");
-        } else if (Objects.equals(function, FileHelper.paramNameLocalLoginEnc)) {
-            adapter.add("FUNCTION: local login encrypted selected");
-
-            adapter.add("Checking credentials");
-            for (int i = 1; i <= timesRun; i++) {
-                byte[] savedCredentials = FileHelper.readCredentialsEnc(ivSpec);
-                byte[] credentialsBytes = (email + pass).getBytes();
-
-                byte[] encrypted = null;
-                // encrypt file
-                SecretKeySpec keySpec = new SecretKeySpec(FileHelper.SECRET_KEY.getBytes(StandardCharsets.UTF_8), "AES");
-                try {
-                    Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-                    cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-                    encrypted = cipher.doFinal(credentialsBytes);
-                } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException | InvalidAlgorithmParameterException e) {
-                    e.printStackTrace();
-                }
-
-                //Log.i("mytag", new String(encrypted));
-
-                repository.doLogDataAsync();
-                repository.doneAsync();
-
-                if (Arrays.equals(encrypted, savedCredentials)) {
-                    adapter.add("Login " + i + " sucessful");
-                } else {
-                    adapter.add("Login " + i + " failed");
-                }
-            }
-            adapter.add("Test finished...");
-
-            repository.doLogDataAsync();
-            repository.doneAsync();
+            makeFileFunctionEncrypted(fileName, timesRun, repository);
+        } else if (Objects.equals(function, FileHelper.paramNameLocalLoginFileNotEnc)) {
+            localLoginFileNotEncrypted(email, pass, timesRun, repository);
+        } else if (Objects.equals(function, FileHelper.paramNameLocalLoginFileEnc)) {
+            localLoginFileEncrypted(email, pass, timesRun, repository);
         } else if (Objects.equals(function, FileHelper.paramNameLocalLoginSharedPref)) {
-            adapter.add("FUNCTION: local login prefs selected");
-
-            adapter.add("Checking credentials");
-            for (int i = 1; i <= timesRun; i++) {
-                Map<String, String> savedCredentials = FileHelper.getCredentialsFromPreferences(this);
-
-                Log.e("mytag", savedCredentials.get(FileHelper.email));
-                Log.i("mytag", email);
-
-                if (Objects.equals(savedCredentials.get(FileHelper.email), email)
-                        && Objects.equals(savedCredentials.get(FileHelper.pass), pass)) {
-                    adapter.add("Login " + i + " sucessful");
-                } else {
-                    adapter.add("Login " + i + " failed");
-                }
-            }
-
-            repository.doLogDataAsync();
-            repository.doneAsync();
-
-            adapter.add("Test finished...");
+            localLoginSharedPreferencesNotEncrypted(email, pass, timesRun, repository);
+        } else if (Objects.equals(function, FileHelper.paramNameLocalLoginEncSharedPref)) {
+            localLoginSharedPreferencesEncrypted(email, pass, timesRun, repository);
         }
     }
 
+    private void makeFileFunctionNotEncrypted(String fileName, int timesRun, Repository repository) {
+        adapter.add("FUNCTION: make file selected");
+
+        //read the file base
+        adapter.add("Reading file...");
+        byte[] fileBytes = FileHelper.readFileByBytes(fileName);
+
+        if (fileBytes != null && fileBytes.length > 0) {
+            for (int i = 1; i <= timesRun; i++) {
+                adapter.add("Making copy " + i);
+                FileHelper.createFiles(FileHelper.getFileName(fileName, i), fileBytes);
+            }
+
+            //Neste ponto fazer a medição | LOGDATE
+            // Fazer o DONE
+            repository.doLogDataAsync();
+            repository.doneAsync();
+
+            adapter.add("Test finished!");
+        } else {
+            adapter.add("FILE NOT FOUND!");
+        }
+    }
+
+    private void makeFileFunctionEncrypted(String fileName, int timesRun, Repository repository) {
+        // SAVE ENCRYPTED FILE
+        adapter.add("FUNCTION: make encrypted file selected");
+
+        //read the file base
+        adapter.add("Reading file...");
+        byte[] fileBytes = FileHelper.readFileByBytes(fileName);
+
+        // encrypt file
+        String SECRET_KEY = "aesEncryptionKey";
+        SecretKeySpec keySpec = new SecretKeySpec(SECRET_KEY.getBytes(StandardCharsets.UTF_8), "AES");
+
+        byte[] encrypted = null;
+        try {
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+            encrypted = cipher.doFinal(fileBytes);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (encrypted != null && encrypted.length > 0) {
+            for (int i = 1; i <= timesRun; i++) {
+                adapter.add("Making copy " + i);
+                FileHelper.createFiles(FileHelper.getFileName(fileName, i), encrypted);
+            }
+
+            repository.doLogDataAsync();
+            repository.doneAsync();
+
+            adapter.add("Test finished!");
+        } else {
+            adapter.add("FILE NOT FOUND!");
+        }
+
+    }
+
+    private void localLoginFileNotEncrypted(String email, String pass, int timesRun, Repository repository) {
+        adapter.add("FUNCTION: local login selected");
+
+        adapter.add("Checking credentials");
+        for (int i = 1; i <= timesRun; i++) {
+            List<String> savedCredentials = FileHelper.readCredentialsNotEnc();
+            if (Objects.equals(savedCredentials.get(0), email)
+                    && Objects.equals(savedCredentials.get(1), pass)) {
+                adapter.add("Login " + i + " sucessful");
+            } else {
+                adapter.add("Login " + i + " failed");
+            }
+        }
+
+        repository.doLogDataAsync();
+        repository.doneAsync();
+
+        adapter.add("Test finished...");
+    }
+
+    private void localLoginFileEncrypted(String email, String pass, int timesRun, Repository repository) {
+        adapter.add("FUNCTION: local login encrypted selected");
+
+        adapter.add("Checking credentials");
+        for (int i = 1; i <= timesRun; i++) {
+            byte[] savedCredentials = FileHelper.readCredentialsEnc(ivSpec);
+            byte[] credentialsBytes = (email + pass).getBytes();
+
+            byte[] encrypted = null;
+            // encrypt file
+            SecretKeySpec keySpec = new SecretKeySpec(FileHelper.SECRET_KEY.getBytes(StandardCharsets.UTF_8), "AES");
+            try {
+                Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+                cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
+                encrypted = cipher.doFinal(credentialsBytes);
+            } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException | InvalidAlgorithmParameterException e) {
+                e.printStackTrace();
+            }
+
+            //Log.i("mytag", new String(encrypted));
+
+            repository.doLogDataAsync();
+            repository.doneAsync();
+
+            if (Arrays.equals(encrypted, savedCredentials)) {
+                adapter.add("Login " + i + " sucessful");
+            } else {
+                adapter.add("Login " + i + " failed");
+            }
+        }
+        adapter.add("Test finished...");
+
+        repository.doLogDataAsync();
+        repository.doneAsync();
+    }
+
+    private void localLoginSharedPreferencesNotEncrypted(String email, String pass, int timesRun, Repository repository) {
+        adapter.add("FUNCTION: local login prefs selected");
+
+        adapter.add("Checking credentials");
+        for (int i = 1; i <= timesRun; i++) {
+            Map<String, String> savedCredentials = FileHelper.getCredentialsFromPreferences(this);
+
+            if (Objects.equals(savedCredentials.get(FileHelper.email), email)
+                    && Objects.equals(savedCredentials.get(FileHelper.pass), pass)) {
+                adapter.add("Login " + i + " sucessful");
+            } else {
+                adapter.add("Login " + i + " failed");
+            }
+        }
+
+        repository.doLogDataAsync();
+        repository.doneAsync();
+
+        adapter.add("Test finished...");
+    }
+
+    private void localLoginSharedPreferencesEncrypted(String email, String pass, int timesRun, Repository repository) {
+        adapter.add("FUNCTION: local login prefs encrypted selected");
+
+        adapter.add("Checking credentials");
+        for (int i = 1; i <= timesRun; i++) {
+            Map<String, String> savedCredentials = FileHelper.getCredentialsFromPreferencesEnc(this, ivSpec);
+
+            if (Objects.equals(savedCredentials.get(FileHelper.emailEnc), email) &&
+                    Objects.equals(savedCredentials.get(FileHelper.passEnc), pass)) {
+                adapter.add("Login " + i + " sucessful");
+            } else {
+                adapter.add("Login " + i + " failed");
+            }
+        }
+
+        repository.doLogDataAsync();
+        repository.doneAsync();
+
+        adapter.add("Test finished...");
+    }
+
+    private void sentToCloudFunction(String fileName, int timesRun, Repository repository) {
+        adapter.add("FUNCTION: send to cloud selected");
+
+        //read the file base
+        adapter.add("Reading file...");
+        byte[] fileBytes = FileHelper.readFileByBytes(fileName);
+
+        if (fileBytes != null && fileBytes.length > 0) {
+            //get times to run value
+            //int timesToRun = Integer.parseInt(Objects.requireNonNull(parameters.get(FileHelper.timesToRun)));
+            //create the files
+            String[] fileToReadName = Objects.requireNonNull(fileName).split("\\.");
+            sendToCloud(fileToReadName, fileBytes, timesRun, 1);
+
+            //Neste ponto fazer a medição | LOGDATE
+            // Fazer o DONE
+            repository.doLogDataAsync();
+            repository.doneAsync();
+        } else {
+            adapter.add("FILE NOT FOUND!");
+        }
+    }
 
     /*
      * Sends the file to firebase storage*/

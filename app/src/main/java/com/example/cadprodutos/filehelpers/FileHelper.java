@@ -3,6 +3,8 @@ package com.example.cadprodutos.filehelpers;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Environment;
+import android.text.format.Time;
+import android.util.Base64;
 import android.util.Log;
 
 
@@ -18,7 +20,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,14 +41,20 @@ public class FileHelper {
     public static String fileToReadName = "fileToRead";
     public static String timesToRun = "timesToRun";
     public static String email = "email";
+    public static String emailEnc = "emailEnc";
     public static String pass = "pass";
+    public static String passEnc = "passEnc";
+
+    public static String defaultEmail = "test1@test.com";
+    public static String defaultPass = "password@67";
+    public static String defaultFileName = "somefile.txt";
 
 
     public static String paramNameMakeFile = "makeFile";
     public static String paramNameMakeEncFile = "makeEncFile";
     public static String paramNameSaveCloud = "saveCloud";
-    public static String paramNameLocalLogin = "localLogin";
-    public static String paramNameLocalLoginEnc = "localLoginEnc";
+    public static String paramNameLocalLoginFileNotEnc = "localLogin";
+    public static String paramNameLocalLoginFileEnc = "localLoginEnc";
     public static String paramNameLocalLoginSharedPref = "localLoginSharedPref";
     public static String paramNameLocalLoginEncSharedPref = "localLoginEncSharedPref";
 
@@ -90,6 +97,13 @@ public class FileHelper {
         }
 
         return parameters;
+    }
+
+    public static String getFileName(String fileName, int runTime) {
+        String[] fileToReadName = Objects.requireNonNull(fileName).split("\\.");
+        Time today = new Time();
+        today.setToNow();
+        return fileToReadName[0] + "-" + today.toMillis(false) + runTime + "." + fileToReadName[1];
     }
 
     public static byte[] readFileByBytes(String fileName) {
@@ -144,8 +158,8 @@ public class FileHelper {
         //is the first run
         if (emailSaved == null) {
             SharedPreferences.Editor editor = sp.edit();
-            editor.putString(email, "test1@test.com");
-            editor.putString(pass, "pass1");
+            editor.putString(email, defaultEmail);
+            editor.putString(pass, defaultPass);
             editor.commit();
         }
 
@@ -154,6 +168,46 @@ public class FileHelper {
 
         credentials.put(email, emailSaved);
         credentials.put(pass, passSaved);
+
+        return credentials;
+    }
+
+    public static Map<String, String> getCredentialsFromPreferencesEnc(Context context, IvParameterSpec ivSpec) {
+        Map<String, String> credentials = new HashMap<>();
+
+        SharedPreferences sp = getSPEditor(context);
+
+        //email
+        String emailSaved = sp.getString(emailEnc, null);
+        //is the first run
+        if (emailSaved == null) {
+            try {
+                String emailToEncript = defaultEmail;
+                String passToEncript = defaultPass;
+
+                String emailEncrypted = encrypt(context, emailToEncript, ivSpec);
+                String passEncrypted = encrypt(context, passToEncript, ivSpec);
+
+                SharedPreferences.Editor editor = sp.edit();
+                editor.putString(emailEnc, emailEncrypted);
+                editor.putString(passEnc, passEncrypted);
+                editor.commit();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        String passSaved = null;
+        try {
+            emailSaved = decrypt(context, sp.getString(emailEnc, null), ivSpec);
+            passSaved = decrypt(context, sp.getString(passEnc, null), ivSpec);
+
+            Log.e("mytag", emailSaved);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        credentials.put(emailEnc, emailSaved);
+        credentials.put(passEnc, passSaved);
 
         return credentials;
     }
@@ -167,7 +221,7 @@ public class FileHelper {
         if (!file.exists()) {
             try {
                 FileOutputStream fos = new FileOutputStream(file);
-                String fileStartContent = "test1@test.com\n" + "pass1";
+                String fileStartContent = defaultEmail + "\n" + defaultPass;
                 fos.write((fileStartContent).getBytes());
                 fos.close();
             } catch (IOException e) {
@@ -199,15 +253,12 @@ public class FileHelper {
         //se o arquivo não existir cria com os parâmetros iniciais
         if (!file.exists()) {
             try {
-
-                // encrypt file
-                //String SECRET_KEY = "aesEncryptionKey";
-                SecretKeySpec keySpec = new SecretKeySpec(SECRET_KEY.getBytes(StandardCharsets.UTF_8), "AES");
-
                 FileOutputStream fos = new FileOutputStream(file);
-                String fileStartContent = "test1@test.compass1";
+                String fileStartContent = defaultEmail + defaultPass;
+
                 byte[] fileBytes = fileStartContent.getBytes(StandardCharsets.UTF_8);
 
+                SecretKeySpec keySpec = new SecretKeySpec(SECRET_KEY.getBytes(StandardCharsets.UTF_8), "AES");
                 Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
                 cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
                 byte[] encrypted = cipher.doFinal(fileBytes);
@@ -238,6 +289,34 @@ public class FileHelper {
 
         return new IvParameterSpec(slice);
     }
+
+
+    private static String encrypt(Context context, String value, IvParameterSpec ivParameterSpec) throws Exception {
+        SecretKeySpec keySpec = new SecretKeySpec(SECRET_KEY.getBytes(StandardCharsets.UTF_8), "AES");
+
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivParameterSpec);
+
+        byte[] encrypted = cipher.doFinal(value.getBytes());
+
+        return Base64.encodeToString(encrypted, Base64.DEFAULT);
+    }
+
+    private static String decrypt(Context context, String value, IvParameterSpec ivParameterSpec) throws Exception {
+        SecretKeySpec keySpec = new SecretKeySpec(SECRET_KEY.getBytes(StandardCharsets.UTF_8), "AES");
+
+        // get iv from shared preferences
+        SharedPreferences prefs = context.getSharedPreferences("com.example.encryptednotes", Context.MODE_PRIVATE);
+
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, ivParameterSpec);
+
+        byte[] original = cipher.doFinal(Base64.decode(value, Base64.DEFAULT));
+
+        return new String(original);
+    }
+
+
 }
 
 
