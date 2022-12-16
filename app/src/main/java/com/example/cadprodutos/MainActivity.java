@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
+import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -93,11 +94,16 @@ public class MainActivity extends AppCompatActivity {
         String pass = FileHelper.defaultPass;
         if (res != null) {
             String[] dashParameters = res.split("-");
+            Log.i("tag", Arrays.toString(dashParameters));
             function = (dashParameters[0] != null) ? dashParameters[0] : FileHelper.paramNameMakeFile;
             timesRun = (dashParameters[1] != null) ? Integer.parseInt(dashParameters[1]) : 1;
-            fileName = (dashParameters[2] != null) ? dashParameters[2] : FileHelper.defaultFileName;
-            email = (dashParameters[3] != null) ? dashParameters[3] : FileHelper.defaultEmail;
-            pass = (dashParameters[3] != null) ? dashParameters[3] : FileHelper.defaultPass;
+            try {
+                fileName = (dashParameters[2] != null) ? dashParameters[2] : FileHelper.defaultFileName;
+                email = (dashParameters[3] != null) ? dashParameters[3] : FileHelper.defaultEmail;
+                pass = (dashParameters[3] != null) ? dashParameters[3] : FileHelper.defaultPass;
+            }catch (Exception e){
+                e.printStackTrace();
+            }
         }
 
         if (Objects.equals(function, FileHelper.paramNameMakeFile)) {
@@ -113,6 +119,9 @@ public class MainActivity extends AppCompatActivity {
         } else if (Objects.equals(function, FileHelper.paramNameLocalLoginEncSharedPref)) {
             localLoginSharedPreferencesEncrypted(email, pass, timesRun, repository);
         }
+
+        repository.doLogDataAsync();
+        repository.doneAsync();
     }
 
     private void makeFileFunctionNotEncrypted(String fileName, int timesRun, Repository repository) {
@@ -127,12 +136,6 @@ public class MainActivity extends AppCompatActivity {
                 adapter.add("Making copy " + i);
                 FileHelper.createFiles(FileHelper.getFileName(fileName, i), fileBytes);
             }
-
-            //Neste ponto fazer a medição | LOGDATE
-            // Fazer o DONE
-            repository.doLogDataAsync();
-            repository.doneAsync();
-
             adapter.add("Test finished!");
         } else {
             adapter.add("FILE NOT FOUND!");
@@ -166,9 +169,6 @@ public class MainActivity extends AppCompatActivity {
                 FileHelper.createFiles(FileHelper.getFileName(fileName, i), encrypted);
             }
 
-            repository.doLogDataAsync();
-            repository.doneAsync();
-
             adapter.add("Test finished!");
         } else {
             adapter.add("FILE NOT FOUND!");
@@ -189,9 +189,6 @@ public class MainActivity extends AppCompatActivity {
                 adapter.add("Login " + i + " failed");
             }
         }
-
-        repository.doLogDataAsync();
-        repository.doneAsync();
 
         adapter.add("Test finished...");
     }
@@ -215,11 +212,6 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
 
-            //Log.i("mytag", new String(encrypted));
-
-            repository.doLogDataAsync();
-            repository.doneAsync();
-
             if (Arrays.equals(encrypted, savedCredentials)) {
                 adapter.add("Login " + i + " sucessful");
             } else {
@@ -227,9 +219,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         adapter.add("Test finished...");
-
-        repository.doLogDataAsync();
-        repository.doneAsync();
     }
 
     private void localLoginSharedPreferencesNotEncrypted(String email, String pass, int timesRun, Repository repository) {
@@ -246,9 +235,6 @@ public class MainActivity extends AppCompatActivity {
                 adapter.add("Login " + i + " failed");
             }
         }
-
-        repository.doLogDataAsync();
-        repository.doneAsync();
 
         adapter.add("Test finished...");
     }
@@ -267,9 +253,6 @@ public class MainActivity extends AppCompatActivity {
                 adapter.add("Login " + i + " failed");
             }
         }
-
-        repository.doLogDataAsync();
-        repository.doneAsync();
 
         adapter.add("Test finished...");
     }
