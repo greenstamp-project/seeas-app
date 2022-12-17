@@ -245,8 +245,8 @@ public class FileHelper {
         return credentials;
     }
 
-    public static byte[] readCredentialsEnc(IvParameterSpec ivSpec) {
-        byte[] bytes = new byte[0];
+    public static List<String> readCredentialsEnc(Context context, IvParameterSpec ivSpec) {
+        List<String> credentials = new ArrayList<>();
 
         File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "encripted-credentials.txt");
 
@@ -254,33 +254,35 @@ public class FileHelper {
         if (!file.exists()) {
             try {
                 FileOutputStream fos = new FileOutputStream(file);
-                String fileStartContent = defaultEmail + defaultPass;
 
-                byte[] fileBytes = fileStartContent.getBytes(StandardCharsets.UTF_8);
+                String emailEncrypted = encrypt(context, defaultEmail, ivSpec);
+                String passEncrypted = encrypt(context, defaultPass, ivSpec);
 
-                SecretKeySpec keySpec = new SecretKeySpec(SECRET_KEY.getBytes(StandardCharsets.UTF_8), "AES");
-                Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-                cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-                byte[] encrypted = cipher.doFinal(fileBytes);
-
-                fos.write(encrypted);
+                fos.write((emailEncrypted + passEncrypted).getBytes());
                 fos.close();
-            } catch (IOException | NoSuchPaddingException | InvalidKeyException | BadPaddingException | NoSuchAlgorithmException | IllegalBlockSizeException | InvalidAlgorithmParameterException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
         try {
-            FileInputStream inputStream = new FileInputStream(file);
-            bytes = new byte[inputStream.available()];
-            inputStream.read(bytes);
-            //Log.e("mytag", new String(bytes));
+            BufferedReader br = new BufferedReader(new FileReader(file));
+            String line;
+            while ((line = br.readLine()) != null) {
+                String decrypted = decrypt(context, line, ivSpec);
+                //Log.e("mytag", decrypted);
+                credentials.add(decrypted);
+            }
+            br.close();
+
         } catch (IOException e) {
             Log.e("mytag", Objects.requireNonNull(e.getMessage()));
             e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        return bytes;
+        return credentials;
     }
 
     public static IvParameterSpec generateIv() {

@@ -87,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        String function = FileHelper.paramNameLocalLoginEncSharedPref;
+        String function = FileHelper.paramNameLocalLoginFileEnc;
         int timesRun = 3;
         String fileName = FileHelper.defaultFileName;
         String email = FileHelper.defaultEmail;
@@ -101,30 +101,30 @@ public class MainActivity extends AppCompatActivity {
                 fileName = (dashParameters[2] != null) ? dashParameters[2] : FileHelper.defaultFileName;
                 email = (dashParameters[3] != null) ? dashParameters[3] : FileHelper.defaultEmail;
                 pass = (dashParameters[3] != null) ? dashParameters[3] : FileHelper.defaultPass;
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
         if (Objects.equals(function, FileHelper.paramNameMakeFile)) {
-            makeFileFunctionNotEncrypted(fileName, timesRun, repository);
+            makeFileFunctionNotEncrypted(fileName, timesRun);
         } else if (Objects.equals(function, FileHelper.paramNameMakeEncFile)) {
-            makeFileFunctionEncrypted(fileName, timesRun, repository);
+            makeFileFunctionEncrypted(fileName, timesRun);
         } else if (Objects.equals(function, FileHelper.paramNameLocalLoginFileNotEnc)) {
-            localLoginFileNotEncrypted(email, pass, timesRun, repository);
+            localLoginFileNotEncrypted(email, pass, timesRun);
         } else if (Objects.equals(function, FileHelper.paramNameLocalLoginFileEnc)) {
-            localLoginFileEncrypted(email, pass, timesRun, repository);
+            localLoginFileEncrypted(email, pass, timesRun);
         } else if (Objects.equals(function, FileHelper.paramNameLocalLoginSharedPref)) {
-            localLoginSharedPreferencesNotEncrypted(email, pass, timesRun, repository);
+            localLoginSharedPreferencesNotEncrypted(email, pass, timesRun);
         } else if (Objects.equals(function, FileHelper.paramNameLocalLoginEncSharedPref)) {
-            localLoginSharedPreferencesEncrypted(email, pass, timesRun, repository);
+            localLoginSharedPreferencesEncrypted(email, pass, timesRun);
         }
 
         repository.doLogDataAsync();
         repository.doneAsync();
     }
 
-    private void makeFileFunctionNotEncrypted(String fileName, int timesRun, Repository repository) {
+    private void makeFileFunctionNotEncrypted(String fileName, int timesRun) {
         adapter.add("FUNCTION: make file selected");
 
         //read the file base
@@ -142,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void makeFileFunctionEncrypted(String fileName, int timesRun, Repository repository) {
+    private void makeFileFunctionEncrypted(String fileName, int timesRun) {
         // SAVE ENCRYPTED FILE
         adapter.add("FUNCTION: make encrypted file selected");
 
@@ -176,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void localLoginFileNotEncrypted(String email, String pass, int timesRun, Repository repository) {
+    private void localLoginFileNotEncrypted(String email, String pass, int timesRun) {
         adapter.add("FUNCTION: local login selected");
 
         adapter.add("Checking credentials");
@@ -193,26 +193,14 @@ public class MainActivity extends AppCompatActivity {
         adapter.add("Test finished...");
     }
 
-    private void localLoginFileEncrypted(String email, String pass, int timesRun, Repository repository) {
+    private void localLoginFileEncrypted(String email, String pass, int timesRun) {
         adapter.add("FUNCTION: local login encrypted selected");
 
         adapter.add("Checking credentials");
         for (int i = 1; i <= timesRun; i++) {
-            byte[] savedCredentials = FileHelper.readCredentialsEnc(ivSpec);
-            byte[] credentialsBytes = (email + pass).getBytes();
-
-            byte[] encrypted = null;
-            // encrypt file
-            SecretKeySpec keySpec = new SecretKeySpec(FileHelper.SECRET_KEY.getBytes(StandardCharsets.UTF_8), "AES");
-            try {
-                Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-                cipher.init(Cipher.ENCRYPT_MODE, keySpec, ivSpec);
-                encrypted = cipher.doFinal(credentialsBytes);
-            } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | BadPaddingException | IllegalBlockSizeException | InvalidAlgorithmParameterException e) {
-                e.printStackTrace();
-            }
-
-            if (Arrays.equals(encrypted, savedCredentials)) {
+            List<String> savedCredentials = FileHelper.readCredentialsEnc(this, ivSpec);
+            if (Objects.equals(savedCredentials.get(0), email)
+                    && Objects.equals(savedCredentials.get(1), pass)) {
                 adapter.add("Login " + i + " sucessful");
             } else {
                 adapter.add("Login " + i + " failed");
@@ -221,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
         adapter.add("Test finished...");
     }
 
-    private void localLoginSharedPreferencesNotEncrypted(String email, String pass, int timesRun, Repository repository) {
+    private void localLoginSharedPreferencesNotEncrypted(String email, String pass, int timesRun) {
         adapter.add("FUNCTION: local login prefs selected");
 
         adapter.add("Checking credentials");
@@ -239,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
         adapter.add("Test finished...");
     }
 
-    private void localLoginSharedPreferencesEncrypted(String email, String pass, int timesRun, Repository repository) {
+    private void localLoginSharedPreferencesEncrypted(String email, String pass, int timesRun) {
         adapter.add("FUNCTION: local login prefs encrypted selected");
 
         adapter.add("Checking credentials");
