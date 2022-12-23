@@ -22,6 +22,15 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.UploadTask;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -29,11 +38,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
+
+import okhttp3.OkHttpClient;
 
 //import network.Repository;
 
@@ -191,6 +203,13 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 adapter.add("FILE NOT FOUND!");
             }
+
+        } else if (Objects.equals(function, FileHelper.paramHttpSave)) {
+            // TODO: change server address and file path
+            sendToServer("https://localhost:8080/upload", "file.txt");
+        } else if (Objects.equals(function, FileHelper.paramHttpsSave)) {
+            // TODO: change server address and file path
+            sendToServer("https://localhost:8080/upload", "file.txt");
         } /*else if (Objects.equals(parameters.get(FileHelper.functionName), FileHelper.paramNameLocalLogin)) {
             adapter.add("FUNCTION: local login selected");
             String paramEmail = parameters.get(FileHelper.email);
@@ -209,6 +228,44 @@ public class MainActivity extends AppCompatActivity {
         }*/
 
         //Log.e("tag", parameters.get(FileHelper.functionName));
+    }
+
+    private void sendToServer(String address, String filepath) {
+        try {
+            // Create a new HttpURLConnection
+            URL url = new URL(address);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+            // Generate a unique boundary based on the current time
+            long time = System.currentTimeMillis();
+            Random rnd = new Random();
+            int rndInt = rnd.nextInt();
+            String boundary = "===" + time + "." + rndInt + "===";
+
+            // Set the request method to POST and specify the request body
+            connection.setRequestMethod("POST");
+            connection.setDoOutput(true);
+            connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+            // TODO: add path to a file
+            File file = new File(filepath);
+
+            // Write the file data to the request body
+            OutputStream os = connection.getOutputStream();
+            InputStream is = new FileInputStream(file);
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = is.read(buffer)) != -1) {
+                os.write(buffer, 0, bytesRead);
+            }
+            os.close();
+            is.close();
+
+            // Get the response code and read the response body
+            int responseCode = connection.getResponseCode();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 

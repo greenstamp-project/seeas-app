@@ -29,6 +29,8 @@ public class FileHelper {
     public static String paramNameMakeEncFile = "makeEncFile";
     public static String paramNameSaveCloud = "saveCloud";
     public static String paramNameLocalLogin = "localLogin";
+    public static String paramHttpSave = "HttpSave";
+    public static String paramHttpsSave = "HttpsSave";
 
 
     public static Map<String, String> readParameters() {
