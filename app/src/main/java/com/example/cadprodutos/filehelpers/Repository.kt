@@ -10,7 +10,7 @@ import java.util.concurrent.CompletableFuture
 class Repository {
 
     // IP DO COMPUTADOR (HOST)
-    private val ip = "192.168.1.70"
+    private val ip = "10.16.0.49"
     private val baseUrl = "http://$ip:3000/"
 
     fun doWhatNowAsync(): CompletableFuture<String> =

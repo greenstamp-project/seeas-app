@@ -57,6 +57,8 @@ public class FileHelper {
     public static String paramNameLocalLoginFileEnc = "localLoginEnc";
     public static String paramNameLocalLoginSharedPref = "localLoginSharedPref";
     public static String paramNameLocalLoginEncSharedPref = "localLoginEncSharedPref";
+    public static String paramHttpSave = "HttpSave";
+    public static String paramHttpsSave = "HttpsSave";
 
 
     public static String SECRET_KEY = "aesEncryptionKey";

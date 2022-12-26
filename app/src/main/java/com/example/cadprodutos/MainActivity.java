@@ -16,8 +16,19 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.cadprodutos.filehelpers.FileHelper;
 import com.example.cadprodutos.filehelpers.Repository;
+import com.example.cadprodutos.network.SendFileTask;
 import com.google.firebase.storage.FirebaseStorage;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -27,6 +38,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
 import javax.crypto.BadPaddingException;
@@ -97,12 +109,12 @@ public class MainActivity extends AppCompatActivity {
             Log.i("tag", Arrays.toString(dashParameters));
             function = (dashParameters[0] != null) ? dashParameters[0] : FileHelper.paramNameMakeFile;
             timesRun = (dashParameters[1] != null) ? Integer.parseInt(dashParameters[1]) : 1;
-            try {
+            if(Objects.equals(function, FileHelper.paramNameMakeFile) || Objects.equals(function, FileHelper.paramNameMakeEncFile) ||
+                    Objects.equals(function, FileHelper.paramHttpSave) || Objects.equals(function, FileHelper.paramHttpsSave)){
                 fileName = (dashParameters[2] != null) ? dashParameters[2] : FileHelper.defaultFileName;
-                email = (dashParameters[3] != null) ? dashParameters[3] : FileHelper.defaultEmail;
+            }else{
+                email = (dashParameters[2] != null) ? dashParameters[2] : FileHelper.defaultEmail;
                 pass = (dashParameters[3] != null) ? dashParameters[3] : FileHelper.defaultPass;
-            } catch (Exception e) {
-                e.printStackTrace();
             }
         }
 
@@ -118,11 +130,43 @@ public class MainActivity extends AppCompatActivity {
             localLoginSharedPreferencesNotEncrypted(email, pass, timesRun);
         } else if (Objects.equals(function, FileHelper.paramNameLocalLoginEncSharedPref)) {
             localLoginSharedPreferencesEncrypted(email, pass, timesRun);
+        } else if (Objects.equals(function, FileHelper.paramHttpSave)) {
+            httpSave("/sdcard/Download/file10mb.txt", timesRun);
+        } else if (Objects.equals(function, FileHelper.paramHttpsSave)) {
+            httpsSave("/sdcard/Download/file10mb.txt", timesRun);
         }
 
         repository.doLogDataAsync();
         repository.doneAsync();
     }
+
+    private void httpSave(String fileName, int timesRun){
+
+        for(int i = 0; i<timesRun;i++){
+            SendFileTask sft = new SendFileTask(fileName,"http://10.3.2.129:80/upload");
+            sft.execute();
+            try {
+                sft.get();
+            } catch (ExecutionException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+    private void httpsSave(String fileName, int timesRun){
+
+        for(int i = 0; i<timesRun;i++){
+            SendFileTask sft = new SendFileTask(fileName,"https://10.3.2.129:80/upload");
+            sft.execute();
+            try {
+                sft.get();
+            } catch (ExecutionException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
 
     private void makeFileFunctionNotEncrypted(String fileName, int timesRun) {
         adapter.add("FUNCTION: make file selected");
@@ -182,11 +226,16 @@ public class MainActivity extends AppCompatActivity {
         adapter.add("Checking credentials");
         for (int i = 1; i <= timesRun; i++) {
             List<String> savedCredentials = FileHelper.readCredentialsNotEnc();
+            //Log.i("mytag", savedCredentials.toString());
+           //; Log.i("mytag",  email);
+            //Log.i("mytag",  pass);
             if (Objects.equals(savedCredentials.get(0), email)
                     && Objects.equals(savedCredentials.get(1), pass)) {
-                adapter.add("Login " + i + " sucessful");
+                //Log.e("mytag", "sucesso");
+                //adapter.add("Login " + i + " sucessful");
             } else {
-                adapter.add("Login " + i + " failed");
+                //Log.e("mytag", "faliu");
+                //adapter.add("Login " + i + " failed");
             }
         }
 
@@ -199,11 +248,16 @@ public class MainActivity extends AppCompatActivity {
         adapter.add("Checking credentials");
         for (int i = 1; i <= timesRun; i++) {
             List<String> savedCredentials = FileHelper.readCredentialsEnc(this, ivSpec);
+            //Log.i("mytag", savedCredentials.toString());
+             //Log.i("mytag",  email);
+            //Log.i("mytag",  pass);
             if (Objects.equals(savedCredentials.get(0), email)
                     && Objects.equals(savedCredentials.get(1), pass)) {
-                adapter.add("Login " + i + " sucessful");
+                //adapter.add("Login " + i + " sucessful");
+                //Log.e("mytag", "sucessful");
             } else {
-                adapter.add("Login " + i + " failed");
+                //Log.e("mytag", "failed");
+                //adapter.add("Login " + i + " failed");
             }
         }
         adapter.add("Test finished...");
@@ -236,9 +290,9 @@ public class MainActivity extends AppCompatActivity {
 
             if (Objects.equals(savedCredentials.get(FileHelper.emailEnc), email) &&
                     Objects.equals(savedCredentials.get(FileHelper.passEnc), pass)) {
-                adapter.add("Login " + i + " sucessful");
+                //adapter.add("Login " + i + " sucessful");
             } else {
-                adapter.add("Login " + i + " failed");
+                //+adapter.add("Login " + i + " failed");
             }
         }
 
@@ -280,6 +334,7 @@ public class MainActivity extends AppCompatActivity {
             if (timesToRun >= _runTime + 1) {
                 sendToCloud(fileNameParts, fileBytes, timesToRun, _runTime + 1);
             } else {
+                adapter.add("Test finished!");
                 adapter.add("Test finished!");
             }
         });
